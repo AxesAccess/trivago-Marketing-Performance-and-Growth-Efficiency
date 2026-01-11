@@ -1,0 +1,523 @@
+---
+title: "Marketing Performance & Growth Efficiency at trivago (2023–2025)"
+author: "Aleksei Prishchepo"
+date: "2026-01-11"
+fig-format: svg
+bibliography: references.bib
+csl: harvard-cite-them-right.csl
+css: styles.css
+format:
+  pdf:
+    papersize: a4
+    toc: true
+    toc-depth: 2
+    fig-pos: 'H'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(kableExtra)
+```
+
+## Executive Summary
+
+**trivago** is executing a multi-year strategic turnaround aimed to
+ignite its brand by shifting from short-term profit maximization toward
+long-term brand reinvestment. Since late 2024 company returned to
+year-over-year revenue growth.
+
+### Key insights
+
+-   Advertising investment accelerated materially in 2025 (+24% YoY in
+    Q1), while Global ROAS decreased from \~148% in 2023 to \~118% in Q2
+    2025, largely due to increased branded spend.
+
+-   Developed Europe continues to be the most efficient region, while
+    Americas rebounded strongly in Q2 2025.
+
+-   Growth quality has improved through higher branded traffic,
+    increased user loyalty (logged-in users now contribute 20% of
+    referral revenue in comparison to 10% in 2023), and meaningful
+    conversion gains driven by product and AI initiatives.
+
+```{r tbl-key-metrics-2024-2025}
+#| tbl-cap: Key Metrics Overview (2024-2025)
+
+dataset <- read.csv("data/key-metrics-2024-2025.csv")
+
+dataset <- janitor::clean_names(dataset)
+dataset <- rename(
+  dataset,
+  c(
+    "Metric" = "metric",
+    "Latest Data (2024-2025)" = "latest_data_2024_2025"
+  )
+)
+dataset |>
+  kable(format = "latex", longtable = FALSE, booktabs = TRUE) |>
+  kable_styling(bootstrap_options = "striped", full_width = TRUE)
+```
+
+## Business and Data Context
+
+trivago operates a performance-driven metasearch model where marketing
+efficiency is a primary strategic lever. Referral revenue is generated
+predominantly through CPC-based traffic acquisition, making Return on
+Advertising Spend (ROAS) a central decision metric rather than a purely
+operational KPI.
+
+The analysis is based on aggregated financial, marketing, and
+operational disclosures covering 2023–2025. Data limitations include:
+
+-   Geographic segmentation rather than country-level or channel-level
+    granularity
+
+-   A mix of quantitative metrics and qualitative management commentary
+
+-   Absence of user-level or campaign-level performance data
+
+Given these constraints, the report focuses on directional insights,
+efficiency trends, and strategic implications, rather than tactical
+optimization.
+
+## Marketing Investment and Efficiency Outcomes
+
+### Advertising Strategy
+
+In 2025, trivago materially increased advertising investment to rebuild
+a “branded visitor baseline”, which management views as essential for
+sustainable growth.
+
+::: {#tbl-advertising-spend-by-segment tbl-pos="h" layout-ncol="1" tbl-cap="Advertising spend by segment (in million EUR)"}
+```{r advertising-spend-by-segment}
+dataset <- read.csv("data/advertising-spend-by-segment-m-eur.csv")
+dataset <- janitor::clean_names(dataset)
+dataset <- dataset |> filter(grepl("2023|2024|2025", period))
+
+dataset <- rename(
+  dataset,
+  c(
+    "Period" = "period",
+    "Americas" = "americas",
+    "Developed Europe" = "developed_europe",
+    "Rest of World" = "rest_of_world",
+    "Total Advertising Spend" = "total_global"
+  )
+)
+
+dataset |>
+  kable(format = "latex", longtable = FALSE, booktabs = TRUE) |>
+  kable_styling()
+```
+:::
+
+In Q1 2025, total Advertising Spend rose by 24% YoY, reaching €104.5
+million (see @tbl-advertising-spend-by-segment).
+
+Incremental investment has been disproportionately allocated toward
+branded channels (direct visits and brand-related search), rather than
+generic performance marketing auctions.
+
+Generative AI has been used to scale marketing execution, including
+AI-localized TV advertising across more than ten languages using
+creative adaptation.
+
+```{r fig-advertising-spend-vs-referral-revenue, fig.width=6, fig.height=2.5}
+#| fig-cap: Advertising Spend vs. Referral Revenue (2022-2024)
+
+revenue <- read.csv("data/referral-revenue-by-segment-m-eur.csv")
+revenue <- janitor::clean_names(revenue)
+
+ad_spend <- read.csv("data/advertising-spend-by-segment-m-eur.csv")
+ad_spend <- janitor::clean_names(ad_spend)
+
+dataset <- revenue |> inner_join(ad_spend, by = "period", suffix = c(".rev", ".ad"))
+dataset <- rename(
+  dataset,
+  c(
+    "Period" = "period",
+    "Total Referral Revenue" = "total_referral_revenue",
+    "Total Advertising Spend" = "total_global"
+  )
+)
+dataset <- dataset |> filter(grepl("2022|2023|2024", Period))
+
+dataset |> ggplot() +
+  geom_line(aes(x = Period, y = `Total Referral Revenue`, group = 1, color = "Total Referral Revenue")) +
+  geom_line(aes(x = Period, y = `Total Advertising Spend`, group = 1, color = "Total Advertising Spend")) +
+  scale_y_continuous(limits = c(0.0, NA)) +
+  labs(
+    x = NULL,
+    y = "Amount (Million EUR)",
+    color = "Metric"
+  ) +
+  theme_minimal()
+
+```
+
+### Marketing Efficiency and ROAS
+
+Despite accelerated spend, marketing efficiency has remained stable at
+the global level.
+
+Global ROAS reached 119.0% in Q2 2025 vs. 132.10% in the prior year.
+
+```{r fig-roas-trend-by-segment, fig.width=6, fig.height=2.5}
+#| fig-cap: ROAS trend by geographic segment
+
+dataset <- read.csv("data/roas-by-segment-percent.csv")
+dataset <- janitor::clean_names(dataset)
+
+dataset <- dataset |> filter(grepl("2023|2024|2025", period))
+
+dataset |> ggplot() +
+  geom_line(aes(x = period, y = developed_europe, group = 1, color = "Developed Europe")) +
+  geom_line(aes(x = period, y = americas, group = 1, color = "Americas")) +
+  geom_line(aes(x = period, y = rest_of_world, group = 1, color = "Rest of World")) +
+  geom_line(aes(x = period, y = global_total, group = 1, color = "Global ROAS"), size = 1.2) +
+  # start y from 0
+  scale_y_continuous(limits = c(0.0, NA)) +
+  labs(
+    # title = "ROAS Trend by Geographic Segment",
+    x = NULL,
+    y = "ROAS (%)",
+    color = "Segment"
+  ) +
+  theme_minimal()
+```
+
+Developed Europe remains the most efficient region, with ROAS of 134%,
+benefiting from strong returns on earlier brand investments (see
+@tbl-roas-contribution-by-segment).
+
+::: {#tbl-roas-contribution-by-segment tbl-pos="h" layout-ncol="1" tbl-cap="ROAS contribution by segment (in million EUR)"}
+```{r roas-contribution-by-segment}
+dataset <- read.csv("data/roas-contibution-by-segment-m-eur.csv")
+dataset <- janitor::clean_names(dataset)
+dataset <- dataset |> filter(grepl("2023|2024|2025", period))
+dataset <- rename(
+  dataset,
+  c(
+    "Period" = "period",
+    "Americas" = "americas", "Developed Europe" = "developed_europe",
+    "Rest of World" = "rest_of_world",
+    "Total ROAS Contribution" = "total_global"
+  )
+)
+dataset |>
+  kable(format = "latex", longtable = FALSE, booktabs = TRUE) |>
+  kable_styling()
+```
+:::
+
+In the Rest of World, referral revenue increased 44% YoY in Q1 2025,
+reflecting high growth elasticity during post-COVID recovery.
+
+In the first half of 2025, trivago generated €41.0 million in ROAS
+contribution, representing referral revenue remaining after advertising
+spend.
+
+Source: @trivago_annual_website, @trivago_q1_2025_review,
+@refinitiv2025, @globenewswire2025_q1, @globenewswire2025_q2
+
+## Growth Drivers
+
+### Traffic Composition and Demand Quality
+
+A core driver of improved growth efficiency is the shift in traffic
+composition toward higher-quality demand sources.
+
+Branded channel traffic achieved double-digit growth across all segments
+in 2025.
+
+This shift reduces exposure to increasingly competitive and volatile
+performance marketing auctions and supports more stable long-term ROAS.
+
++---------------+------------------------+--------------------------+
+| Period        | Branded Channel        | Performance Marketing    |
+|               | Traffic & Strategy     | Channel & Strategy       |
++===============+========================+==========================+
+| 2019          | Characterized by high  | Significant investment   |
+|               | brand awareness and    | in high-volume keyword   |
+|               | **extensive TV         | auctions.                |
+|               | marketing**.           |                          |
++---------------+------------------------+--------------------------+
+| 2020 - 2022   | **Brand spend ceased   | Primary source of        |
+|               | almost completely** in | traffic, but managed     |
+|               | 2020 to preserve       | with **high ROAS         |
+|               | liquidity. Resumed at  | targets** to maintain    |
+|               | highly reduced levels  | profitability during low |
+|               | in late 2021.          | demand.                  |
++---------------+------------------------+--------------------------+
+| 2023          | Multi-year strategy to | Experienced **increased  |
+|               | "reignite" the brand   | volatility** and         |
+|               | announced. New global  | headwinds due to Google  |
+|               | creative campaign      | ad format changes.       |
+|               | launched in December.  |                          |
++---------------+------------------------+--------------------------+
+| 2024          | Branded traffic growth | Faced higher competition |
+|               | reached double-digit   | and rising costs in      |
+|               | levels in Developed    | keyword auctions.        |
+|               | Europe and Americas.   |                          |
+|               | Brand spend increased, |                          |
+|               | driving a 7% rise in   |                          |
+|               | total ad costs.        |                          |
++---------------+------------------------+--------------------------+
+| 2025 H1       | **20% of total         | Continued disciplined    |
+|               | Referral Revenue**     | approach; performance    |
+|               | generated by logged-in | marketing spend reduced  |
+|               | members, double the    | in some segments (e.g.,  |
+|               | share of 2023. Higher  | Europe) to prioritize    |
+|               | proportional           | brand elasticity.        |
+|               | investment in brand    |                          |
+|               | vs. performance.       |                          |
++---------------+------------------------+--------------------------+
+
+: Traffic mix evolution: Branded vs. Performance
+
+### User Loyalty and Retention
+
+User loyalty has emerged as an increasingly important contributor to
+revenue quality.
+
+In Q2 2025, logged-in users generated 20% of total referral revenue,
+doubling their contribution since 2023.
+
+This trend reflects improved retention and repeat usage, increasing the
+lifetime value of acquired users and lowering effective acquisition
+costs.
+
+### Conversion Efficiency Improvements
+
+Conversion gains have amplified the returns from marketing investment.
+
+trivago’s internal booking conversion index improved materially in 2025,
+with efficiency gains of approximately 35%.
+
+“Project Trinity” simplified the price comparison experience by
+restructuring how rates are grouped and displayed, leading to higher
+user confidence and conversion.
+
+AI-generated hotel highlights have expanded to 350,000+ hotels, reducing
+research friction for users.
+
+### Marketplace and Product Enablers
+
+In parallel with traffic and conversion improvements, trivago has
+implemented structural changes to stabilize and scale its marketplace.
+
+More than 100 partners have transitioned to a CPA-based bidding model,
+reducing auction volatility.
+
+Transaction-based pricing has doubled its share of marketplace revenue
+since 2023.
+
+These changes improve predictability of returns for both advertisers and
+trivago, supporting sustainable marketing scale.
+
+### Acquisition of Holisto Limited
+
+trivago's acquisition of Holisto Limited, an AI-driven travel technology
+platform and hotel rate aggregator, was executed to enhance its
+technical capabilities and revenue streams.
+
+The primary implication of this acquisition is the accelerated rollout
+of "trivago Book & Go", a white-label booking engine that allows
+travelers to complete reservations through a seamless, trivago-branded
+funnel.
+
+Financially, management expects Holisto to contribute a low double-digit
+million euro increase to consolidated total revenue in 2025 while
+operating near a breakeven level. Strategically, the integration enables
+trivago to shift more of its marketplace toward a transaction-based
+(CPA) model.
+
+Source: @trivago_annual_website, @globenewswire2025_q1,
+@globenewswire2025_q2, @refinitiv2025, @mirai2024, @dcfmodeling2025,
+@ibisworld2025, @stockanalysis2025
+
+## Risks, Constraints and External Factors
+
+Despite renewed growth momentum, trivago continues to face several
+structural challenges:
+
+-   Platform dependency: Changes to search engine advertising formats
+    negatively impacted traffic volumes throughout 2023 and early 2024.
+
+-   Advertiser concentration: Expedia Group and Booking Holdings account
+    for approximately 75% of referral revenue, creating dependency risk
+    (see @fig-advertiser-concentration).
+
+```{r fig-advertiser-concentration, fig.width=6, fig.height=2.5}
+#| fig-cap: Advertiser Concentration
+
+dataset <- read.csv("data/advertiser-concentration-percent.csv")
+dataset <- janitor::clean_names(dataset)
+dataset <- dataset |> filter(grepl("2023|2024|2025", period))
+dataset <- rename(
+  dataset,
+  c(
+    "Period" = "period",
+    "Expedia Group" = "expedia_group_share",
+    "Booking Holdings" = "booking_holdings_share"
+  )
+)
+
+dataset <- dataset |> pivot_longer(
+  cols = c("Expedia Group", "Booking Holdings"),
+  names_to = "Advertiser",
+  values_to = "Share"
+)
+
+dataset |>
+  ggplot(aes(
+    x = Period, y = Share, fill = Advertiser,
+    group = Advertiser, colour = Advertiser
+  )) +
+  geom_area(position = "stack", alpha = 0.5) +
+  geom_line(position = "stack", size = 0.25) +
+  scale_y_continuous(limits = c(0, 100), expand = c(0, 0)) +
+  labs(
+    x = NULL,
+    y = "Share of Referral Revenue (%)",
+    fill = "Advertiser"
+  ) +
+  theme_minimal()
+```
+
+-   Regulatory environment: The EU Digital Markets Act (DMA) has
+    weakened Google’s hotel products, creating short-term traffic
+    tailwinds in Europe, though the durability of these effects remains
+    uncertain.
+
+Refer to @tbl-swot-matrix for a comprehensive SWOT analysis.
+
+::: {#tbl-swot-matrix tbl-pos="h" layout-ncol="1" tbl-cap="trivago SWOT Matrix (2025)"}
++---------------------------------+----------------------------------+
+| **STRENGTHS**                   | **WEAKNESSES**                   |
++=================================+==================================+
+| -   **Global Scale:** Access to | -   **Advertiser                 |
+|     **5.0 million+              |     Concentration:** Heavy       |
+|     accommodations** in over    |     reliance on **Expedia        |
+|     190 countries.              |     Group** (35-37%) and         |
+|                                 |     **Booking Holdings**         |
+| -   **Brand Equity:** High      |     (37-40%) for the majority of |
+|     global recognition with the |     revenue.                     |
+|     iconic **"Hotel? trivago"** |                                  |
+|     tagline.                    | -   **High Acquisition Costs:**  |
+|                                 |     Advertising spend typically  |
+| -   **AI Innovation:** Advanced |     consumes **over 80% of total |
+|     proprietary matching        |     revenue**.                   |
+|     algorithms and **AI Smart   |                                  |
+|     Search** capabilities.      | -   **Financial Volatility:**    |
+|                                 |     History of **net losses**    |
+| -   **Direct Traffic Growth:**  |     and susceptibility to rapid  |
+|     Strong branded channel      |     changes in advertiser        |
+|     traffic; **20% of referral  |     bidding strategies.          |
+|     revenue** now comes from    |                                  |
+|     logged-in members.          | -   **Mobile Conversion Gap:**   |
+|                                 |     Visitors via mobile devices  |
+| -   **Operational Agility:**    |     traditionally **convert at   |
+|     Ability to **rapidly adjust |     lower rates** than desktop   |
+|     marketing spend** in        |     users.                       |
+|     response to market          |                                  |
+|     volatility.                 | -   **Niche Focus:** Historical  |
+|                                 |     focus almost exclusively on  |
+| -   **Strategic M&A:**          |     accommodations compared to   |
+|     Acquisition of **Holisto    |     "all-in-one" travel OTAs.    |
+|     Ltd** to provide            |                                  |
+|     white-label booking and AI  |                                  |
+|     rate aggregation.           |                                  |
++---------------------------------+----------------------------------+
+
++---------------------------------+----------------------------------+
+| **OPPORTUNITIES**               | **THREADS**                      |
++=================================+==================================+
+| -   **Branded Baseline          | -   **Search Engine Dominance:** |
+|     Rebuilding:** Multi-year    |     **Google Hotel Ads**         |
+|     strategy to increase        |     competing directly by        |
+|     **direct traffic** and      |     promoting its own products   |
+|     reduce reliance on paid     |     at the expense of organic    |
+|     search.                     |     search.                      |
+|                                 |                                  |
+| -   **Vertical                  | -   **Macroeconomic Pressures:** |
+|     Diversification:**          |     **Inflation and rising       |
+|     Potential to expand into    |     costs** potentially          |
+|     **flights, car rentals, and |     dampening consumer           |
+|     activities** through        |     discretionary spending on    |
+|     partnerships.               |     travel.                      |
+|                                 |                                  |
+| -   **CPA Model Transition:**   | -   **AI Disruption:** Rise of   |
+|     Moving partners to a        |     **AI hyperscalers**          |
+|     transaction-based model to  |     (ChatGPT, Gemini)            |
+|     reduce auction volatility.  |     potentially changing how     |
+|                                 |     travelers research and book  |
+| -   **EU Regulatory Shifts:**   |     travel.                      |
+|     Gaining market share as the |                                  |
+|     **Digital Markets Act       | -   **Regulatory Scrutiny:**     |
+|     (DMA)** restricts Google's  |     Persistent investigations    |
+|     ability to self-preference  |     into **pricing transparency  |
+|     its own hotel products in   |     and ranking algorithms** by  |
+|     the EU.                     |     global competition.          |
++---------------------------------+----------------------------------+
+:::
+
+## Strategic Implications
+
+The strategic implications center on a multi-year turnaround effort that
+prioritizes long-term brand health and technological defensive measures
+over short-term profit maximization. The primary strategic implications
+include:
+
+-   **Reduced Dependency on Paid Search:** A core weakness is trivago's
+    reliance on performance marketing channels (generic search engine
+    keywords), where high competition drives up acquisition costs.
+
+-   **Prioritizing Brand Investment:** Management is shifting strategy
+    to "reignite" the brand through massive reinvestment ad campaigns
+    (e.g., the Jürgen Klopp campaign). The goal is to build a baseline
+    of **direct, branded traffic** which is more loyal and
+    higher-converting than paid search leads.
+
+-   **Acceptance of Short-term Losses:** This strategy implies a
+    deliberate decision to prioritize long-term direct user loyalty,
+    even if it negatively impacts near-term profitability or leads to
+    operating losses.
+
+-   **Hedge against Hyperscalers:** trivago views the integration of AI
+    (such as **AI Smart Search** and personalized ranking) as a
+    necessary defense against AI hyperscalers like ChatGPT and Gemini,
+    which threaten to disrupt how travelers research and book.
+
+-   **Shift to Transaction-Based Revenue:** To mitigate the volatility
+    caused by a few large advertisers changing their cost-per-click
+    (CPC) bidding strategies, trivago is aggressively transitioning
+    partners to a **Cost-Per-Acquisition (CPA)** model.
+
+-   **Empowering Smaller Partners:** The acquisition of **Holisto Ltd**
+    enables the rollout of "**trivago Book & Go**," a white-label
+    booking engine. This allows smaller partners without strong brands
+    to benefit from a trusted, trivago-branded checkout, thereby
+    reducing reliance on the "Big Two" (Expedia and Booking Holdings).
+
+-   **EU Market Share Gains:** The implementation of the **Digital
+    Markets Act (DMA)** in the EU restricts Google's ability to
+    self-preference its own hotel products. This presents a strategic
+    opportunity for trivago to regain metasearch market share as Google
+    Hotels loses visibility in the region.
+
+-   **Fostering Membership and Loyalty**: trivago is increasingly
+    focusing on user retention by offering exclusive deals and price
+    alerts for members. The fact that **20% of Referral Revenue** now
+    stems from logged-in users indicates a successful shift toward a
+    more predictable and engaged user base.
+
+{{< pagebreak >}}
+
+## References
+
+::: {#refs}
+:::
